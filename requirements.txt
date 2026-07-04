@@ -1,0 +1,15 @@
+Cartopy==0.25.0
+earthkit-data==0.19.3
+earthkit-hydro==1.2.0
+earthkit-plots==0.6.1
+ipytest==0.14.2
+jsonschema==4.26.0
+matplotlib==3.10.8
+netCDF4==1.7.4
+numpy==2.4.4
+pandas==3.0.2
+pytest==9.0.3
+scipy==1.17.1
+seaborn==0.13.2
+statsmodels==0.14.6
+xarray==2026.2.0
