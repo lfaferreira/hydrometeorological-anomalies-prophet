@@ -42,6 +42,19 @@ def ensure_directory_exists(directory: Path) -> None:
     logger.info("Diretório de saída: %s", directory)
 
 
+def build_filename(year: int, month: int) -> str:
+    """Nome do arquivo NetCDF mensal, no padrão já usado em `dados/raw/`.
+
+    Args:
+        year: Ano do arquivo.
+        month: Mês do arquivo (1-12).
+
+    Returns:
+        Nome do arquivo no formato precipitacao_YYYY_MM.nc.
+    """
+    return f"precipitacao_{year}_{month:02d}.nc"
+
+
 def build_cds_request(year: int, month: int, area: List[float]) -> dict:
     """Constrói o dicionário de requisição para o CDS.
 
@@ -83,7 +96,7 @@ def download_monthly_data(year: int, month: int, output_dir: Path, area: List[fl
     Raises:
         Exception: Repassa exceções da API do CDS ou de E/S.
     """
-    filename = output_dir / f"precipitation_{year}_{month:02d}.nc"
+    filename = output_dir / build_filename(year, month)
 
     if filename.exists():
         logger.info("Arquivo %s já existe. Pulando.", filename.name)
