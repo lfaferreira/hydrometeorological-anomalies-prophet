@@ -88,6 +88,28 @@ def filter_by_bounding_box(
     return region
 
 
+def deaccumulate_precipitation(da: xr.DataArray, time_dim: str = "valid_time") -> xr.DataArray:
+    """Converte uma variável acumulada (ex.: `tp` do ERA5-Land) em incrementos por passo.
+
+    O ERA5-Land acumula `tp` desde o início do ciclo de previsão: cada passo horário
+    contém o total acumulado desde o último reset, não o incremento daquela hora.
+    Um `diff` negativo entre passos consecutivos indica um reset do acumulador —
+    nesse caso o valor bruto do passo já é o incremento correto (reinício da contagem).
+
+    Args:
+        da: DataArray com a variável acumulada.
+        time_dim: Nome da dimensão temporal.
+
+    Returns:
+        DataArray de mesma forma, com o incremento (não acumulado) em cada passo.
+    """
+    diffed = da.diff(dim=time_dim)
+    raw_from_second_step = da.isel({time_dim: slice(1, None)})
+    increments = diffed.where(diffed >= 0, raw_from_second_step)
+    first_step = da.isel({time_dim: slice(0, 1)})
+    return xr.concat([first_step, increments], dim=time_dim)
+
+
 def compute_daily_areal_precipitation(
     ds: xr.Dataset,
     precip_var: str = "tp",
@@ -98,8 +120,9 @@ def compute_daily_areal_precipitation(
 
     Passos:
         1. Converte a variável de precipitação para milímetros (fator de escala).
-        2. Agrega temporalmente para total diário em cada pixel.
-        3. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
+        2. De-acumula os passos horários (ver `deaccumulate_precipitation`).
+        3. Agrega temporalmente para total diário em cada pixel.
+        4. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
 
     Args:
         ds: Dataset com variável de precipitação e coordenadas espaciais.
@@ -112,7 +135,11 @@ def compute_daily_areal_precipitation(
         Série pandas com índice temporal e valores médios diários de precipitação (mm).
     """
     logger.info("Convertendo '%s' para mm (fator %.1f)", precip_var, scale_factor)
+    ds = ds.copy()
     ds[precip_var] = ds[precip_var] * scale_factor
+
+    logger.info("De-acumulando passos horários de '%s'", precip_var)
+    ds[precip_var] = deaccumulate_precipitation(ds[precip_var], time_dim=time_dim)
 
     logger.info("Agregando temporalmente para total diário por pixel")
     daily_pixel = ds.resample({time_dim: "1D"}).sum(skipna=False)
