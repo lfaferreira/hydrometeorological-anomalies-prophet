@@ -42,3 +42,17 @@ def fit_prophet_model(df: pd.DataFrame, interval_width: float = 0.95, **prophet_
     model = Prophet(interval_width=interval_width, **prophet_kwargs)
     model.fit(df)
     return model
+
+
+def generate_forecast(model: Prophet, df: pd.DataFrame) -> pd.DataFrame:
+    """Gera previsões (com intervalo de incerteza) para as datas de `df`.
+
+    Args:
+        model: Modelo Prophet já ajustado.
+        df: DataFrame com a coluna `ds` (datas para prever; pode cobrir treino+teste).
+
+    Returns:
+        DataFrame com colunas `ds`, `yhat`, `yhat_lower`, `yhat_upper`.
+    """
+    raw_forecast = model.predict(df[["ds"]])
+    return raw_forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]

@@ -16,3 +16,15 @@ def test_fit_prophet_model_returns_fitted_model(tiny_prophet_df):
 
     forecast = model.predict(tiny_prophet_df[["ds"]])
     assert {"yhat", "yhat_lower", "yhat_upper"}.issubset(forecast.columns)
+
+
+def test_generate_forecast_covers_full_input_range(tiny_prophet_df):
+    from src.models.prophet_model import generate_forecast
+
+    train, test = train_test_split_temporal(tiny_prophet_df, test_size_days=10)
+    model = fit_prophet_model(train)
+
+    forecast = generate_forecast(model, tiny_prophet_df[["ds"]])
+
+    assert len(forecast) == len(tiny_prophet_df)
+    assert list(forecast.columns) == ["ds", "yhat", "yhat_lower", "yhat_upper"]
