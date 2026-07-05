@@ -75,7 +75,9 @@ KNOWN_EXTREME_EVENTS: List[ExtremeEvent] = [
         "source": (
             "Anjos et al., 2024 (Resultados e Discussões, Figura 7) — 80% da "
             "cidade coberta pelas águas e mais de 50 mortos, segundo Diário de "
-            "Pernambuco, 18-19/07/1975"
+            "Pernambuco, 18-19/07/1975; nota: evento de impacto humano/"
+            "hidrológico, não necessariamente com totais diários de chuva "
+            "excepcionais comparados aos demais eventos da Tabela 1"
         ),
     },
     {
@@ -111,7 +113,9 @@ KNOWN_EXTREME_EVENTS: List[ExtremeEvent] = [
             "Anjos et al., 2024 (Resultados e Discussões, Figura 7A) — citado "
             "como um dos episódios de grande impacto na memória da população "
             "recifense, com registro fotográfico da Avenida Caxangá tomada "
-            "pelas águas"
+            "pelas águas; nota: evento de impacto humano/hidrológico, não "
+            "necessariamente com totais diários de chuva excepcionais comparados "
+            "aos demais eventos da Tabela 1"
         ),
     },
 ]
