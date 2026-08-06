@@ -92,3 +92,50 @@ def test_compute_daily_spatial_stats_returns_mean_max_and_percentiles(tiny_preci
     assert (stats["max"] >= stats["mean"]).all()
     assert (stats["p95"] >= stats["p90"]).all()
     assert (stats["max"] >= stats["p95"]).all()
+
+
+def test_compute_daily_spatial_stats_with_genuine_spatial_variation():
+    # tiny_precip_dataset tiles o MESMO valor em todos os pixels, entao
+    # mean == max == p90 == p95 sempre -- nao exercita o caso em que os
+    # pixels realmente diferem. Este teste usa 3 pixels com totais diarios
+    # diferentes (3mm, 30mm, 4mm) para garantir que max/percentis nao sejam
+    # calculados como uma media disfarcada.
+    #
+    # 3 passos horarios UTC as 04h,05h,06h -- apos o relabel -1h (fica em
+    # 03h,04h,05h) e a conversao para America/Recife -3h (fica em
+    # 00h,01h,02h) tudo permanece no mesmo dia local 2020-01-01, sem cruzar
+    # para o dia anterior ou seguinte.
+    times = pd.date_range("2020-01-01 04:00", periods=3, freq="h")
+    lat = [-8.0]
+    lon = [-35.0, -34.95, -34.90]
+
+    # acumulado (m), monotonico (sem reset) por pixel -> total diario = ultimo valor
+    pixel_a = [0.001, 0.002, 0.003]  # -> 3mm
+    pixel_b = [0.001, 0.002, 0.030]  # -> 30mm (pico concentrado em 1 pixel)
+    pixel_c = [0.001, 0.002, 0.004]  # -> 4mm
+
+    data = np.zeros((3, 1, 3))
+    data[:, 0, 0] = pixel_a
+    data[:, 0, 1] = pixel_b
+    data[:, 0, 2] = pixel_c
+
+    ds = xr.Dataset(
+        {"tp": (["valid_time", "latitude", "longitude"], data)},
+        coords={"valid_time": times, "latitude": lat, "longitude": lon},
+    )
+
+    stats = compute_daily_spatial_stats(ds)
+
+    assert len(stats) == 1
+    day = stats.iloc[0]
+    # media dos 3 pixels: (3 + 30 + 4) / 3
+    assert day["mean"] == pytest.approx(12.333, abs=0.01)
+    # maximo espacial e o pixel do pico, estritamente maior que a media
+    assert day["max"] == pytest.approx(30.0, abs=0.01)
+    assert day["max"] > day["mean"]
+    # percentis (interpolacao linear sobre [3, 4, 30] ordenado) nao sao
+    # forcados a serem iguais por construcao
+    assert day["p90"] == pytest.approx(24.8, abs=0.01)
+    assert day["p95"] == pytest.approx(27.4, abs=0.01)
+    assert day["p95"] > day["p90"]
+    assert day["max"] >= day["p95"]
