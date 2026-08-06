@@ -1,7 +1,13 @@
 """Registro de metadados de proveniência do processamento da série de
 precipitação — período coberto, produto/variável de origem, extensão
 espacial usada e hash dos arquivos brutos consumidos, para que qualquer
-número publicado seja rastreável até os dados e o código que o geraram."""
+número publicado seja rastreável até os DADOS que o geraram.
+
+Limitação conhecida: nenhum identificador do código (commit git, versão do
+pacote) é registrado aqui, então a proveniência cobre a entrada, não a
+transformação — reproduzir um número exige saber, por fora, em que commit a
+série foi gerada. Fechar essa lacuna é item da Etapa 8 (reprodutibilidade e
+engenharia) do plano de correção."""
 
 import hashlib
 import json
