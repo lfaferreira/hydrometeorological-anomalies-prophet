@@ -1,7 +1,11 @@
 # hydrometeorological-anomalies-prophet
 
-TCC (MBA Data Science e Analytics — USP/ESALQ): detecção de anomalias em séries
-hidrometeorológicas com Prophet, aplicada a eventos extremos de inundação urbana no Brasil.
+TCC (MBA Data Science e Analytics — USP/ESALQ). Objetivo congelado (ver `docs/escopo_e_limitacoes.md`): avaliar se um modelo Prophet é capaz de identificar retrospectivamente anomalias de precipitação média diária na Região Metropolitana do Recife (RMR), comparando seu desempenho com métodos climatológicos simples e com eventos extremos documentados
+
+Este projeto **não** prevê chuva, **não** emite alerta antecipado e **não**
+modela risco de inundação — ver
+[`docs/escopo_e_limitacoes.md`](docs/escopo_e_limitacoes.md) para o escopo
+completo e as limitações conhecidas.
 
 ## Setup
 
