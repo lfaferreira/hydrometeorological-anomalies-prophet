@@ -53,7 +53,7 @@ def load_netcdf_data(raw_dir: Path, file_pattern: str = "precipitacao_*.nc") -> 
     logger.info("Carregando %d arquivo(s) NetCDF: %s", len(files), [f.name for f in files])
     # Converte para string para evitar problemas de Path com open_mfdataset
     ds = xr.open_mfdataset(str(pattern), combine="by_coords")
-    logger.info("Dataset carregado. Dimensões: %s", dict(ds.dims))
+    logger.info("Dataset carregado. Dimensões: %s", dict(ds.sizes))
     return ds
 
 
@@ -84,29 +84,77 @@ def filter_by_bounding_box(
     region = ds.sel(
         {lat_dim: slice(lat_max, lat_min), lon_dim: slice(lon_min, lon_max)}
     )
-    logger.info("Novas dimensões após filtro: %s", dict(region.dims))
+    logger.info("Novas dimensões após filtro: %s", dict(region.sizes))
     return region
 
 
-def deaccumulate_precipitation(da: xr.DataArray, time_dim: str = "valid_time") -> xr.DataArray:
+def deaccumulate_precipitation(
+    da: xr.DataArray,
+    time_dim: str = "valid_time",
+    reset_hour: int = 1,
+) -> xr.DataArray:
     """Converte uma variável acumulada (ex.: `tp` do ERA5-Land) em incrementos por passo.
 
     O ERA5-Land acumula `tp` desde o início do ciclo de previsão: cada passo horário
     contém o total acumulado desde o último reset, não o incremento daquela hora.
-    Um `diff` negativo entre passos consecutivos indica um reset do acumulador —
-    nesse caso o valor bruto do passo já é o incremento correto (reinício da contagem).
+
+    **O reset é estrutural, não estatístico.** O ciclo de acumulação do
+    ERA5-Land reinicia sempre em uma hora FIXA E CONHECIDA — `01:00 UTC` de
+    todo dia — e acumula monotonicamente até o passo `00:00 UTC` do dia
+    seguinte. Esta função identifica o reset por essa hora
+    (`valid_time.dt.hour == reset_hour`), nunca pelo sinal do `diff`.
+
+    Motivo (verificado empiricamente nos 72 arquivos de `dados/raw/`, série
+    2020-2025 completa): `tp` é float32, e dentro de um mesmo ciclo ocorrem
+    `diff`s negativos minúsculos por puro ruído de arredondamento. Em toda a
+    série, o maior `diff` negativo em uma hora que NÃO é `01:00` vale
+    `4,76e-08 m` (= 4,8e-05 mm) — escala de ULP do float32, jamais um reset
+    real. A regra antiga ("`diff < 0` ⇒ reset ⇒ o incremento é o valor bruto
+    acumulado") substituía o incremento horário pelo acumulado inteiro do
+    ciclo nesses casos, inflando o total do dia em até +288%; afetava 39% dos
+    dias da série. Simetricamente, 80 resets genuínos das 19.728 ocorrências
+    de `01:00` têm `diff >= 0` (o ciclo anterior terminou com acumulado menor
+    que o primeiro incremento do ciclo seguinte) e eram silenciosamente
+    perdidos pela regra do sinal.
+
+    Regra aplicada:
+        - hora == `reset_hour`: o incremento é o próprio valor bruto (primeiro
+          incremento do novo ciclo);
+        - demais horas: o incremento é o `diff`, com clip em `>= 0` como
+          defesa contra o ruído residual de float32 (um incremento zerado por
+          ruído significa "sem chuva mensurável naquela hora" dentro da
+          precisão do dado — nunca infla um total);
+        - primeiro passo da série: só é um incremento válido se sua hora for
+          `reset_hour`. Caso contrário ele é a cauda de um ciclo anterior não
+          observado (o acumulado de horas que não estão no dado) e o
+          incremento daquele passo é **desconhecido** — marcado como NaN, e
+          não chutado. Ver `_daily_pixel_totals`, que se apoia nisso
+          (`skipna=False`) para descartar o dia parcial inicial da série.
 
     Args:
-        da: DataArray com a variável acumulada.
+        da: DataArray com a variável acumulada, com `time_dim` nos rótulos
+            originais em UTC do ERA5-Land (antes de qualquer deslocamento;
+            ver `align_valid_time_to_accumulation_window`).
         time_dim: Nome da dimensão temporal.
+        reset_hour: Hora (UTC) em que o acumulador reinicia. `1` para o
+            ERA5-Land.
 
     Returns:
-        DataArray de mesma forma, com o incremento (não acumulado) em cada passo.
+        DataArray de mesma forma, com o incremento (não acumulado) em cada
+        passo; NaN no primeiro passo quando este não cai em `reset_hour`.
     """
-    diffed = da.diff(dim=time_dim)
+    is_reset = da[time_dim].dt.hour == reset_hour
+
+    diffed = da.diff(dim=time_dim).clip(min=0.0)
     raw_from_second_step = da.isel({time_dim: slice(1, None)})
-    increments = diffed.where(diffed >= 0, raw_from_second_step)
+    increments = xr.where(
+        is_reset.isel({time_dim: slice(1, None)}), raw_from_second_step, diffed
+    )
+
     first_step = da.isel({time_dim: slice(0, 1)})
+    if not bool(is_reset.isel({time_dim: 0})):
+        first_step = xr.full_like(first_step, float("nan"))
+
     return xr.concat([first_step, increments], dim=time_dim)
 
 
@@ -117,11 +165,10 @@ def align_valid_time_to_accumulation_window(da: xr.DataArray, time_dim: str = "v
     FINAL da janela de acumulação (convenção ECMWF), não do início. Ex.: o
     valor rotulado `2020-01-02T00:00` é, na verdade, o incremento acumulado
     entre `2020-01-01T23:00` e `2020-01-02T00:00` — ou seja, pertence ao dia
-    01/01, não ao dia 02/01. Confirmado empiricamente em
-    `dados/raw/precipitacao_2020_01.nc`: para qualquer dia D, o reset do
-    acumulador (diff negativo entre passos consecutivos) ocorre no passo
+    01/01, não ao dia 02/01. Confirmado empiricamente nos 72 arquivos de
+    `dados/raw/`: para qualquer dia D, o reset do acumulador ocorre no passo
     `D 01:00`, nunca em `D 00:00` — logo `D 00:00` ainda é o último passo
-    do ciclo de D-1.
+    do ciclo de D-1 (ver `deaccumulate_precipitation`).
 
     Sem esta correção, um `resample("1D")` direto sobre `valid_time` inclui
     a última hora do dia ANTERIOR e descarta a última hora do dia CORRENTE
@@ -184,6 +231,25 @@ def _daily_pixel_totals(
     Passos compartilhados por `compute_daily_areal_precipitation` e
     `compute_daily_spatial_stats` — mantidos em uma única função para que
     as duas nunca divirjam na definição de "total diário".
+
+    Fronteiras da série (ambas verificadas contra `dados/raw/`, cujo primeiro
+    passo bruto é `2020-01-01 00:00 UTC` e o último `2025-12-31 23:00 UTC`):
+
+    - **Início.** O primeiro passo bruto (`00:00 UTC`) NÃO é o início de um
+      ciclo de acumulação — é a cauda do ciclo de `2019-12-31`, que não foi
+      baixado. `deaccumulate_precipitation` marca esse incremento como NaN
+      (desconhecido) em vez de chutá-lo, e o `resample(...).sum(skipna=False)`
+      abaixo propaga esse NaN para todo o dia local `2019-12-31` (que só
+      receberia 4 das 24 horas locais de qualquer forma). O `dropna()` de
+      `compute_daily_areal_precipitation` então remove esse dia, e a série
+      começa limpa em `2020-01-01`.
+    - **Fim.** O último dia local (`2025-12-31`) tem 20 das 24 horas locais:
+      as 4 restantes exigiriam os passos brutos de `2026-01-01 00:00–03:00
+      UTC`, fora da janela baixada. Não há aqui nenhuma ambiguidade de
+      de-acumulação (todos os incrementos presentes estão corretos), apenas
+      cobertura incompleta — o valor é um subtotal real, não um total diário.
+      Mantido na série e documentado em `docs/escopo_e_limitacoes.md` (item
+      7c), com a disposição (manter vs. recortar) deferida à Etapa 3.
 
     Args:
         ds: Dataset com variável de precipitação e coordenadas espaciais.

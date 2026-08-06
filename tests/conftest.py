@@ -7,12 +7,17 @@ import xarray as xr
 
 @pytest.fixture
 def tiny_precip_dataset() -> xr.Dataset:
-    """2 dias, 24 passos horários cada, simulando `tp` acumulado do ERA5-Land (em metros).
+    """2 ciclos do ERA5-Land, 24 passos horários cada, simulando `tp` acumulado (em metros).
 
-    Dia 1: acumulação linear de 0 a 0.024 m (24 mm) ao longo do dia.
-    Dia 2: acumulação linear de 0 a 0.010 m (10 mm) ao longo do dia.
+    O ciclo de acumulação do ERA5-Land reinicia às `01:00 UTC` e vai até o
+    passo `00:00 UTC` do dia seguinte — por isso a série começa em
+    `2020-01-01 01:00` (início de ciclo genuíno), e não em `00:00`, que seria
+    a cauda de um ciclo anterior não observado.
+
+    Ciclo 1 (2020-01-01 01:00 → 2020-01-02 00:00): acumulação linear até 0.024 m (24 mm).
+    Ciclo 2 (2020-01-02 01:00 → 2020-01-03 00:00): acumulação linear até 0.010 m (10 mm).
     """
-    times = pd.date_range("2020-01-01 00:00", periods=48, freq="h")
+    times = pd.date_range("2020-01-01 01:00", periods=48, freq="h")
     day1 = np.linspace(0.001, 0.024, 24)
     day2 = np.linspace(0.0004, 0.010, 24)
     tp = np.concatenate([day1, day2])
