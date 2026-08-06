@@ -1,0 +1,310 @@
+{
+  "generated_at": "2026-08-06T16:58:44.733289+00:00",
+  "dataset": "reanalysis-era5-land",
+  "variable": "total_precipitation",
+  "period": {
+    "start": "2019-12-31",
+    "end": "2025-12-31"
+  },
+  "spatial_extent": {
+    "type": "rmr_metro_area_polygon",
+    "source": "geobr.read_metro_area(year=2018)",
+    "name_metro": "Rm Recife",
+    "bounds": [
+      -35.2659685,
+      -8.609356799999997,
+      -34.80690330000001,
+      -7.462009399999997
+    ]
+  },
+  "raw_files": [
+    {
+      "filename": "precipitacao_2020_01.nc",
+      "sha256": "cfb4f63e13150ecd8cdd1ede206a01725ba68e43b964518890a1227d185d9bf0"
+    },
+    {
+      "filename": "precipitacao_2020_02.nc",
+      "sha256": "b8b4e80e3858667a7994e0f58aec5022aea7f097fca54380f5b9822e99ebd190"
+    },
+    {
+      "filename": "precipitacao_2020_03.nc",
+      "sha256": "82aede410f96d99b015f71d236cd197985d25fb700d2e122a16fced46d44c2ca"
+    },
+    {
+      "filename": "precipitacao_2020_04.nc",
+      "sha256": "09d4a9667b22724e08e515f47a0065104c58f13c0ebfb385a5a0e75cb63a64fb"
+    },
+    {
+      "filename": "precipitacao_2020_05.nc",
+      "sha256": "079bb80cf7b3baf2f1888a39cd30244a8aa9d0f047dc5cb49512db78eb11e36c"
+    },
+    {
+      "filename": "precipitacao_2020_06.nc",
+      "sha256": "4c96ba8d7477c11139a2e202734a944596ccfc101962714a72bbccc92ec3a53c"
+    },
+    {
+      "filename": "precipitacao_2020_07.nc",
+      "sha256": "30d93c7c2f4937a58729adecdda49ba211e1fc57ff715946d1ca3a9a0968d2fe"
+    },
+    {
+      "filename": "precipitacao_2020_08.nc",
+      "sha256": "0a6292d11295605db4bb5c96e93a552e9c7288c90520c1adf6e061dad51e15f2"
+    },
+    {
+      "filename": "precipitacao_2020_09.nc",
+      "sha256": "025962c685de1299e5dc0275ee2f55f8c6ad8b3fe14a5a3cd010de6dca35ef41"
+    },
+    {
+      "filename": "precipitacao_2020_10.nc",
+      "sha256": "df8a1df2c34446563e175fa18566e60129349871e16cd4c28f0b23e7873fa5d5"
+    },
+    {
+      "filename": "precipitacao_2020_11.nc",
+      "sha256": "0942bd8c4f7b079534a60dfb855e4025aa480e32ea11b2edde2cb7d804cb3a6f"
+    },
+    {
+      "filename": "precipitacao_2020_12.nc",
+      "sha256": "40a0c5c141370c4690770b1eeaca35cafd7118e974a749515fe5d416a266b9b9"
+    },
+    {
+      "filename": "precipitacao_2021_01.nc",
+      "sha256": "01f583cf38004fb7bfdcf479c5bb3aa9fa96ab922147e65607c37f45360b8bb9"
+    },
+    {
+      "filename": "precipitacao_2021_02.nc",
+      "sha256": "a48567bdd9da68aa1a958eec708d1215097f58a451a121a03b0ef0dc8277989b"
+    },
+    {
+      "filename": "precipitacao_2021_03.nc",
+      "sha256": "b4c05bb87d3be0c1d159c4ab8f86cb19b76a574106047afea2a8eb03b64843ee"
+    },
+    {
+      "filename": "precipitacao_2021_04.nc",
+      "sha256": "721025da42f56391b27259d0f84920d21b22e21d8ae244c614e4acfcc3c85b8c"
+    },
+    {
+      "filename": "precipitacao_2021_05.nc",
+      "sha256": "01e7d7989e1b5b0554046dd2aa8b543bb469aa84e4892a486d78fc9840e0fff4"
+    },
+    {
+      "filename": "precipitacao_2021_06.nc",
+      "sha256": "7b3e9363f35b9ae66a2f69b3bb945e81e5d7408a015b3438593822c4b33d7da6"
+    },
+    {
+      "filename": "precipitacao_2021_07.nc",
+      "sha256": "c66bcff12bcd13e35677a118974ac98f418bd9cc2768efa6d4668d749b39eaa3"
+    },
+    {
+      "filename": "precipitacao_2021_08.nc",
+      "sha256": "6ffeaba6930df38417dbc12a588002fcdc5a97f0403734cc1769b69a31be72e0"
+    },
+    {
+      "filename": "precipitacao_2021_09.nc",
+      "sha256": "820efbae8c7f320399155dea2a74f68efc8663c76cba513078ac481d6f285a37"
+    },
+    {
+      "filename": "precipitacao_2021_10.nc",
+      "sha256": "70cacf1c5deacdf4b0112b010b2726e9d3ec47826b57ab62f058f1d176f17669"
+    },
+    {
+      "filename": "precipitacao_2021_11.nc",
+      "sha256": "24a43f047d24cc0844db183065a2576e4f56d1425334f51104f0b82a6507edda"
+    },
+    {
+      "filename": "precipitacao_2021_12.nc",
+      "sha256": "21beee5a816a220facd85cb205094b2dea4eaa94b77a214df43d39131fb2d4d2"
+    },
+    {
+      "filename": "precipitacao_2022_01.nc",
+      "sha256": "4d6f6816bbbdcf986721aa0df061f8bde03c3d82c4b1f5494bf3ce7291121401"
+    },
+    {
+      "filename": "precipitacao_2022_02.nc",
+      "sha256": "33cc06212f6715d8d5e0f858837517481bb10df26a8f2a40098189d9a50f886c"
+    },
+    {
+      "filename": "precipitacao_2022_03.nc",
+      "sha256": "21726ce4d96aacec52e7dbba2e72e195a1c60f5d4f258916d7d228c81a049658"
+    },
+    {
+      "filename": "precipitacao_2022_04.nc",
+      "sha256": "fd29b0af37865f936fbaf0210b839e39f790a22e895ad0da1afdef9002cc0a2e"
+    },
+    {
+      "filename": "precipitacao_2022_05.nc",
+      "sha256": "7ff2959f0acd4cba7f9033405cd9dc252f3aee194a3a0d3723dd6e4c97e7685d"
+    },
+    {
+      "filename": "precipitacao_2022_06.nc",
+      "sha256": "863cf2e3107ae995b3feb3f61d80893fe830482b103e80f739ee3c28207432ed"
+    },
+    {
+      "filename": "precipitacao_2022_07.nc",
+      "sha256": "827cf8f08b765e5a07387c263409ee541305905af26c4502088f7d464a7948a1"
+    },
+    {
+      "filename": "precipitacao_2022_08.nc",
+      "sha256": "5f9b67c60e422b7e7d7aeb7e3f5c051c1b9be267da4cce3c2d2b943ea9e39483"
+    },
+    {
+      "filename": "precipitacao_2022_09.nc",
+      "sha256": "d947961b8e650a4f10a0c33d315f9d930a02215594fdec8ecb29a3209b494c87"
+    },
+    {
+      "filename": "precipitacao_2022_10.nc",
+      "sha256": "8dd53b310be2350421ade10d5d38a54734dbcda1612e996e469c6543784339f6"
+    },
+    {
+      "filename": "precipitacao_2022_11.nc",
+      "sha256": "11fa28941fdb45cf5b8110197302fee97d673519fbd5d57e39be1fd64aae6590"
+    },
+    {
+      "filename": "precipitacao_2022_12.nc",
+      "sha256": "abab95129d1e2c10f38d9e2917e86d1e127704c61550f1fe29dfabcfce834c96"
+    },
+    {
+      "filename": "precipitacao_2023_01.nc",
+      "sha256": "074f9a922be64fffa88c4a74f35d76c5793127ef7895ef1a856d805d7dde87bb"
+    },
+    {
+      "filename": "precipitacao_2023_02.nc",
+      "sha256": "7c7eb3f75b98cbd6a14080bdf41a6e5d8c55d425afe9d7f4c43ea714d69c713a"
+    },
+    {
+      "filename": "precipitacao_2023_03.nc",
+      "sha256": "b5169622c05db0530605404b898406221407657e7a472e7323ddb0303259bfdb"
+    },
+    {
+      "filename": "precipitacao_2023_04.nc",
+      "sha256": "c529813989d97ff8531f4f9deb08b12ab1216dd78df67df53329dad31dc6bda2"
+    },
+    {
+      "filename": "precipitacao_2023_05.nc",
+      "sha256": "7c0f2dc012b4fda21ca90b5fa70afb36d1bf9b6595dbdb0eb4378e9d413188d1"
+    },
+    {
+      "filename": "precipitacao_2023_06.nc",
+      "sha256": "f32a39b3e1d8abec47874b7791e5233dbd95ef2ee551c54c0756fc0cfd257e80"
+    },
+    {
+      "filename": "precipitacao_2023_07.nc",
+      "sha256": "5b35a31f77a98a78cced2460595faac2a0b9c2635f77a493ea7bb3ca7e48e08e"
+    },
+    {
+      "filename": "precipitacao_2023_08.nc",
+      "sha256": "0317fefc5f231e389bbe608a27b7c1298c1eb57d86484893e375714e2e456cf5"
+    },
+    {
+      "filename": "precipitacao_2023_09.nc",
+      "sha256": "e778750311d19a8ace3b3e6a7e86f7006423626b14afe016bfdb426396c4bf93"
+    },
+    {
+      "filename": "precipitacao_2023_10.nc",
+      "sha256": "7d40a48410af6f272620c1b4a1849e61ff8dfae54b8be42c616f9205e350281d"
+    },
+    {
+      "filename": "precipitacao_2023_11.nc",
+      "sha256": "fcb9b0ce01352424e5f6e095ea31f982e2a32f6cc4c0cd0e1f8e1f519ebf8f13"
+    },
+    {
+      "filename": "precipitacao_2023_12.nc",
+      "sha256": "e85bd059a016ce2c966a467c873d2da01cfc53a2df7ed02ba839e69059ab1ffd"
+    },
+    {
+      "filename": "precipitacao_2024_01.nc",
+      "sha256": "30519b98b07e77de2abac24de7e965ede8c201c7040123280a7bca9ccadf659a"
+    },
+    {
+      "filename": "precipitacao_2024_02.nc",
+      "sha256": "0f1dfa213252d6904951892ddc52ede054c6db29aa2e98513a13404ff211dccf"
+    },
+    {
+      "filename": "precipitacao_2024_03.nc",
+      "sha256": "97c09e4c730baa351b56cde4aadd9e8901a3a5711f4e3407b76a974c4ba26bef"
+    },
+    {
+      "filename": "precipitacao_2024_04.nc",
+      "sha256": "ea9054d1b6d05db7909b5c6a8a9bcfe288a2d2eed9789731e15ab0f9f0c6874d"
+    },
+    {
+      "filename": "precipitacao_2024_05.nc",
+      "sha256": "34f154c15a9ef4bb2bf894ead1569c80caf364f04f2a7b32dd1f97d6810b8ef6"
+    },
+    {
+      "filename": "precipitacao_2024_06.nc",
+      "sha256": "a73ed84fc9561a8c4115ab82665f909cb5bb0149dae740ea689564b0a220469e"
+    },
+    {
+      "filename": "precipitacao_2024_07.nc",
+      "sha256": "c00b2bbe1faa745b0dd50bde63b27f1f5474eb86269e4e916a7d4801aebb9736"
+    },
+    {
+      "filename": "precipitacao_2024_08.nc",
+      "sha256": "432c8aa6b34ea952fdf1fb722f6d83178f9da06269fe890b86941feffbc11397"
+    },
+    {
+      "filename": "precipitacao_2024_09.nc",
+      "sha256": "f860248fb0760b36d0b40de27da20a354a30345b60b07c1a35e4317cf16ae76d"
+    },
+    {
+      "filename": "precipitacao_2024_10.nc",
+      "sha256": "fed56650b5932ec9df766180877882aa865c0123f37886fb38dbf5bfb1b48511"
+    },
+    {
+      "filename": "precipitacao_2024_11.nc",
+      "sha256": "5a17c990ff059bc8fe787313ef039f8611ebc593883861367d66f6dff94c923c"
+    },
+    {
+      "filename": "precipitacao_2024_12.nc",
+      "sha256": "9d3fcc29621bcb71902263c4c77f81ee854e29b14aee27fc6f5e69b41b03932a"
+    },
+    {
+      "filename": "precipitacao_2025_01.nc",
+      "sha256": "8a0b00d355e662f3ad43d0399f1599cebf7c3a3e96212c5c1475987bd7c8945e"
+    },
+    {
+      "filename": "precipitacao_2025_02.nc",
+      "sha256": "1368f704b84e1a7125020ccc235bb31d989a8a21445118d0d7e79d77791fefef"
+    },
+    {
+      "filename": "precipitacao_2025_03.nc",
+      "sha256": "c48fafec350eb6891280e330b585659d23a4284f9f16a8bdccb84df73cad040a"
+    },
+    {
+      "filename": "precipitacao_2025_04.nc",
+      "sha256": "18dae214658744649af9095e7db4b3d88fdaff7ca2209eba39de275286077436"
+    },
+    {
+      "filename": "precipitacao_2025_05.nc",
+      "sha256": "4b90532f631c9e61573c964159c432e568fbbb366aa028042a858cc78c9b6882"
+    },
+    {
+      "filename": "precipitacao_2025_06.nc",
+      "sha256": "13b10d7be4253dc98f8b70b963a8193744bc53ff0cbbb2e51f33041bee23de55"
+    },
+    {
+      "filename": "precipitacao_2025_07.nc",
+      "sha256": "d3542cc739f9f04abb60e2b1e20118b932c8121046008ca3ddbcb3cb3c82d4f8"
+    },
+    {
+      "filename": "precipitacao_2025_08.nc",
+      "sha256": "6d19a2b6bd719969892c012fb03ddd0a63f058726ad294738b04e19bd7d72ee3"
+    },
+    {
+      "filename": "precipitacao_2025_09.nc",
+      "sha256": "a969f25b2b7de9f4892bda2d072e07d19fa0a4f508a3b72f40bc444eb06a5239"
+    },
+    {
+      "filename": "precipitacao_2025_10.nc",
+      "sha256": "b610bc00c6dc282197dfc60cee9fd397888305fe2593fe5a6f520b2f874f7ddb"
+    },
+    {
+      "filename": "precipitacao_2025_11.nc",
+      "sha256": "f4c2a7c3286e9d622bb27e5107150258607bc8f5500a74636edf80c83816c415"
+    },
+    {
+      "filename": "precipitacao_2025_12.nc",
+      "sha256": "1c956ab25c0052c4740eab1046a78a38f0e516c7fbe7387a382e63c6023b3265"
+    }
+  ]
+}

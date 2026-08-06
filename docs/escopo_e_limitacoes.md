@@ -2,8 +2,9 @@
 
 > Documento vivo: cada etapa do plano de correção metodológica
 > (`docs/superpowers/plans/`) deve atualizar a tabela de limitações abaixo ao
-> ser concluída. Última atualização: 2026-08-05 (Etapa 1 — congelamento de
-> objetivo e claims).
+> ser concluída. Última atualização: 2026-08-06 (Etapa 2 — auditoria e
+> reconstrução da série: fuso horário, rótulo de janela de acumulação,
+> polígono da RMR, estatísticas espaciais e metadados de proveniência).
 
 ## Objetivo congelado
 
@@ -71,9 +72,10 @@ e atualizar a tabela de limitações abaixo.
 | 2 | Os dois eventos de maio/2022 formam um bloco de 9 dias correlacionados, contados como observações independentes | Etapas 5/6 | Pendente |
 | 3 | Precisão não identificável: os falsos positivos misturam eventos reais não catalogados, chuva sem impacto e alarmes espúrios | Etapa 6 | Pendente (pode permanecer não identificável mesmo após a Etapa 6 — ver nota abaixo) |
 | 4 | Comparação com a APAC incompatível por construção (limiar diário retrospectivo vs. observação prospectiva em 3h/4 postos; nível "alerta" ≥100mm inalcançável na série, máximo histórico ~89,96mm) | Etapa 7 | Pendente |
-| 5 | Bounding box (não polígono da RMR) usado para a média espacial | Etapa 2 | Pendente |
-| 6 | Sem ajuste de fuso horário — agregação diária em UTC, não `America/Recife` | Etapa 2 | Pendente |
-| 7 | De-acumulação horária do ERA5-Land nunca validada manualmente contra o NetCDF bruto | Etapa 2 | Pendente |
+| 5 | Bounding box (não polígono da RMR) usado para a média espacial | Etapa 2 | Resolvido na Etapa 2 |
+| 6 | Sem ajuste de fuso horário — agregação diária em UTC, não `America/Recife` | Etapa 2 | Resolvido na Etapa 2 |
+| 7 | De-acumulação horária do ERA5-Land nunca validada manualmente contra o NetCDF bruto | Etapa 2 | Resolvido na Etapa 2 |
+| 7b | [Descoberto na Etapa 2] `valid_time` do ERA5-Land rotulava o FIM da janela de acumulação, não o início — cada total diário incluía a última hora do dia anterior e descartava a própria última hora. Corrigido junto com o ajuste de fuso horário. | Etapa 2 | Resolvido na Etapa 2 |
 | 8 | Holdout (05/07/2025–31/12/2025) não cobre um ciclo chuvoso completo da RMR | Etapa 3 | Pendente |
 | 9 | Sem baseline de comparação (só o Prophet existe em `src/models`) | Etapa 4 | Pendente |
 | 10 | "Análise de sensibilidade" e "robustez a gaps" atuais (`src/evaluation/sensitivity.py`, `tests/models/test_robustness.py`) são smoke tests de software, não evidência empírica | Etapa 5 | Pendente |
@@ -84,6 +86,12 @@ Nota sobre o item 3: mesmo após a Etapa 6 (expansão e qualificação do
 catálogo), a precisão pode permanecer não identificável se o catálogo
 continuar incompleto — isso deve ser reportado como tal no texto final do
 TCC, nunca apresentado como uma precisão medida com confiança.
+
+**Nota (Etapa 2):** `dados/processed/flagged_prophet_rmr_2020_2025.csv` (saída do
+Prophet gerada no notebook 02) ficou desatualizado após a correção da série
+nesta etapa — foi calculado sobre a série anterior, não corrigida. Será
+regenerado quando o Prophet for reajustado (Etapa 3); não deve ser citado
+no texto final do TCC até lá.
 
 ## Como interpretar números publicados antes da Etapa 10
 

@@ -327,46 +327,66 @@ def save_to_csv(df: pd.DataFrame, output_path: Path) -> None:
 def main(
     raw_data_dir: Path = Path("dados/raw"),
     processed_data_dir: Path = Path("dados/processed"),
-    lat_north: float = -7.9,
-    lat_south: float = -8.3,
-    lon_west: float = -35.2,
-    lon_east: float = -34.8,
+    metro_area_year: int = 2018,
     file_pattern: str = "precipitacao_*.nc"
 ) -> Optional[Path]:
     """Pipeline principal de processamento.
 
     Args:
         raw_data_dir: Diretório com arquivos NetCDF brutos.
-        processed_data_dir: Diretório onde o CSV será salvo.
-        lat_north: Latitude norte (máxima) da região.
-        lat_south: Latitude sul (mínima) da região.
-        lon_west: Longitude oeste (mínima) da região.
-        lon_east: Longitude leste (máxima) da região.
+        processed_data_dir: Diretório onde os artefatos processados serão salvos.
+        metro_area_year: Ano de referência da malha de área metropolitana
+            do geobr usada para o polígono da RMR (ver `get_rmr_polygon`).
         file_pattern: Padrão para localizar os arquivos NetCDF.
 
     Returns:
-        Caminho do arquivo CSV gerado ou None em caso de erro.
+        Caminho do CSV Prophet (`ds`, `y`) gerado, ou None em caso de erro.
+        Também escreve `serie_estatisticas_espaciais_rmr_2020_2025.csv`
+        (mean/max/p90/p95) e `metadata.json` no mesmo diretório.
     """
+    # imports locais para nao exigir geobr/geopandas em quem so usa as
+    # funcoes de agregacao temporal (Tasks 1/3) sem a mascara espacial
+    from src.data.metadata import build_processing_metadata, write_metadata
+    from src.data.rmr_polygon import get_rmr_polygon, mask_by_polygon
+
     try:
         configure_directories(raw_data_dir, processed_data_dir)
 
+        raw_files = sorted(raw_data_dir.glob(file_pattern))
+        if not raw_files:
+            raise FileNotFoundError(f"Nenhum arquivo encontrado com o padrão '{raw_data_dir / file_pattern}'")
+
         ds_full = load_netcdf_data(raw_data_dir, file_pattern)
 
-        # Ajusta a ordem dos argumentos: lat_max (north), lat_min (south)
-        ds_region = filter_by_bounding_box(
-            ds_full,
-            lat_min=lat_south,
-            lat_max=lat_north,
-            lon_min=lon_west,
-            lon_max=lon_east
-        )
+        polygon = get_rmr_polygon(year=metro_area_year)
+        ds_region = mask_by_polygon(ds_full, polygon)
 
         precipitation_series = compute_daily_areal_precipitation(ds_region)
-
         prophet_df = prepare_prophet_dataframe(precipitation_series)
+
+        spatial_stats_df = compute_daily_spatial_stats(ds_region)
+        spatial_stats_df.index.name = "ds"
 
         output_file = processed_data_dir / "serie_prophet_rmr_2020_2025.csv"
         save_to_csv(prophet_df, output_file)
+
+        stats_file = processed_data_dir / "serie_estatisticas_espaciais_rmr_2020_2025.csv"
+        spatial_stats_df.reset_index().to_csv(stats_file, index=False)
+        logger.info("Estatísticas espaciais salvas em: %s", stats_file)
+
+        minx, miny, maxx, maxy = polygon.bounds
+        metadata = build_processing_metadata(
+            raw_files=raw_files,
+            period_start=str(prophet_df["ds"].min().date()),
+            period_end=str(prophet_df["ds"].max().date()),
+            spatial_extent={
+                "type": "rmr_metro_area_polygon",
+                "source": f"geobr.read_metro_area(year={metro_area_year})",
+                "name_metro": "Rm Recife",
+                "bounds": [minx, miny, maxx, maxy],
+            },
+        )
+        write_metadata(metadata, processed_data_dir / "metadata.json")
 
         return output_file
 
