@@ -110,6 +110,69 @@ def deaccumulate_precipitation(da: xr.DataArray, time_dim: str = "valid_time") -
     return xr.concat([first_step, increments], dim=time_dim)
 
 
+def align_valid_time_to_accumulation_window(da: xr.DataArray, time_dim: str = "valid_time") -> xr.DataArray:
+    """Corrige o rótulo temporal de uma variável acumulada do ERA5-Land.
+
+    O ERA5-Land rotula cada passo horário acumulado com o `valid_time` do
+    FINAL da janela de acumulação (convenção ECMWF), não do início. Ex.: o
+    valor rotulado `2020-01-02T00:00` é, na verdade, o incremento acumulado
+    entre `2020-01-01T23:00` e `2020-01-02T00:00` — ou seja, pertence ao dia
+    01/01, não ao dia 02/01. Confirmado empiricamente em
+    `dados/raw/precipitacao_2020_01.nc`: para qualquer dia D, o reset do
+    acumulador (diff negativo entre passos consecutivos) ocorre no passo
+    `D 01:00`, nunca em `D 00:00` — logo `D 00:00` ainda é o último passo
+    do ciclo de D-1.
+
+    Sem esta correção, um `resample("1D")` direto sobre `valid_time` inclui
+    a última hora do dia ANTERIOR e descarta a última hora do dia CORRENTE
+    em cada total diário — um viés sistemático medido em ~10-25% nos dias
+    chuvosos amostrados (ver tests/data/test_deaccumulation_sanity.py).
+
+    Args:
+        da: DataArray já de-acumulado (ver `deaccumulate_precipitation`),
+            com `valid_time` na convenção original do ERA5-Land (rótulo =
+            fim da janela).
+        time_dim: Nome da dimensão temporal.
+
+    Returns:
+        DataArray com `valid_time` deslocado -1h, agora rotulado pelo
+        INÍCIO da hora que o valor representa.
+    """
+    shifted_times = da[time_dim].values - pd.Timedelta(hours=1)
+    return da.assign_coords({time_dim: shifted_times})
+
+
+def to_local_time(da: xr.DataArray, tz: str = "America/Recife", time_dim: str = "valid_time") -> xr.DataArray:
+    """Converte o índice temporal (UTC, sem tzinfo) de um DataArray para um fuso local.
+
+    O ERA5-Land reporta `valid_time` em UTC, sem tzinfo explícito. A RMR
+    está em `America/Recife` (UTC-3, sem horário de verão desde 2019 — toda
+    a janela modelada, 2020-2025, usa o mesmo offset fixo, mas a conversão
+    é feita via `zoneinfo`/`tz_convert` em vez de um deslocamento
+    hardcoded, para não depender dessa premissa silenciosamente).
+
+    Args:
+        da: DataArray com `valid_time` em UTC (naive, sem tzinfo).
+        tz: Fuso horário IANA de destino.
+        time_dim: Nome da dimensão temporal.
+
+    Returns:
+        DataArray com `valid_time` convertido para `tz` e depois com o
+        tzinfo removido (mantendo o dtype naive datetime64 exigido por
+        `xr.Dataset.resample`), para que o `resample("1D")` subsequente
+        agrupe por dia de calendário LOCAL, não UTC.
+    """
+    localized = (
+        pd.DatetimeIndex(da[time_dim].values)
+        .tz_localize("UTC")
+        .tz_convert(tz)
+        .tz_localize(None)
+    )
+    shifted = da.copy()
+    shifted[time_dim] = localized
+    return shifted
+
+
 def compute_daily_areal_precipitation(
     ds: xr.Dataset,
     precip_var: str = "tp",
@@ -121,8 +184,9 @@ def compute_daily_areal_precipitation(
     Passos:
         1. Converte a variável de precipitação para milímetros (fator de escala).
         2. De-acumula os passos horários (ver `deaccumulate_precipitation`).
-        3. Agrega temporalmente para total diário em cada pixel.
-        4. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
+        3. Corrige o rótulo de janela de acumulação (relabel -1h) e converte para América/Recife.
+        4. Agrega temporalmente para total diário (calendário local) em cada pixel.
+        5. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
 
     Args:
         ds: Dataset com variável de precipitação e coordenadas espaciais.
@@ -141,7 +205,16 @@ def compute_daily_areal_precipitation(
     logger.info("De-acumulando passos horários de '%s'", precip_var)
     ds[precip_var] = deaccumulate_precipitation(ds[precip_var], time_dim=time_dim)
 
-    logger.info("Agregando temporalmente para total diário por pixel")
+    logger.info("Corrigindo rótulo de janela de acumulação e convertendo para America/Recife")
+    aligned_da = align_valid_time_to_accumulation_window(ds[precip_var], time_dim=time_dim)
+    ds = ds.assign_coords({time_dim: aligned_da[time_dim]})
+    ds[precip_var] = aligned_da
+
+    local_da = to_local_time(ds[precip_var], time_dim=time_dim)
+    ds = ds.assign_coords({time_dim: local_da[time_dim]})
+    ds[precip_var] = local_da
+
+    logger.info("Agregando temporalmente para total diário (calendário local) por pixel")
     daily_pixel = ds.resample({time_dim: "1D"}).sum(skipna=False)
 
     logger.info("Calculando média espacial (média de todos os pixels da região)")
