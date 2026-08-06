@@ -76,11 +76,9 @@ def mask_by_polygon(
             polígono antes do pré-filtro.
 
     Returns:
-        Dataset com a mesma forma (e extensão de latitude/longitude) do
-        `ds` de entrada, com os pixels fora do polígono marcados como NaN
-        — inclusive os que caem fora da caixa delimitadora usada no
-        pré-filtro. Use `.dropna(..., how="all")` no chamador se quiser
-        também remover linhas/colunas totalmente vazias.
+        Dataset com os pixels fora do polígono marcados como NaN (mesma
+        forma do recorte pré-filtrado; use `.dropna(..., how="all")` no
+        chamador se quiser também remover linhas/colunas totalmente vazias).
     """
     minx, miny, maxx, maxy = polygon.bounds
     logger.info("Pré-filtrando pela caixa delimitadora do polígono (+margem %.2f)", margin)
@@ -96,10 +94,4 @@ def mask_by_polygon(
     logger.info("Máscara do polígono: %d de %d pixels dentro da RMR", mask.sum(), mask.size)
 
     mask_da = xr.DataArray(mask, dims=[lat_dim, lon_dim], coords={lat_dim: lats, lon_dim: lons})
-    # Reindexa a máscara para a extensão completa do `ds` original: pixels
-    # fora da caixa do pré-filtro (portanto garantidamente fora do polígono)
-    # também devem virar NaN, não simplesmente desaparecer do resultado.
-    mask_full = mask_da.reindex(
-        {lat_dim: ds[lat_dim].values, lon_dim: ds[lon_dim].values}, fill_value=False
-    )
-    return ds.where(mask_full)
+    return region.where(mask_da)

@@ -18,9 +18,15 @@ def test_get_rmr_polygon_returns_rm_recife_with_expected_bounds():
     assert maxy == pytest.approx(-7.4620094, abs=0.01)
 
 
-def test_mask_by_polygon_keeps_only_cells_inside_polygon():
-    # quadrado 2x2 graus, [0,0]-[2,2]; a malha do dataset cobre uma area maior
-    square = Polygon([(0.4, 0.4), (0.4, 1.6), (1.6, 1.6), (1.6, 0.4)])
+def test_mask_by_polygon_crops_to_bbox_and_masks_points_outside_polygon():
+    # forma em "L": para lon em [0.4,0.9] o poligono cobre lat completo
+    # [0.4,1.6]; para lon em [0.9,1.6] so cobre lat [0.4,0.9] -- garante
+    # pontos dentro da caixa delimitadora (usada no pre-filtro) que ainda
+    # assim ficam fora do poligono, testando mascaramento e recorte
+    # separadamente.
+    l_shape = Polygon([
+        (0.4, 0.4), (0.4, 1.6), (0.9, 1.6), (0.9, 0.9), (1.6, 0.9), (1.6, 0.4),
+    ])
 
     lats = [0.0, 0.5, 1.0, 1.5, 2.0]
     lons = [0.0, 0.5, 1.0, 1.5, 2.0]
@@ -30,11 +36,18 @@ def test_mask_by_polygon_keeps_only_cells_inside_polygon():
         coords={"valid_time": [0], "latitude": lats, "longitude": lons},
     )
 
-    masked = mask_by_polygon(ds, square, margin=0.0)
+    masked = mask_by_polygon(ds, l_shape, margin=0.0)
+
+    # o recorte (crop) elimina pontos fora da caixa delimitadora do
+    # poligono ([0.4,1.6]): 0.0 e 2.0 nao devem sequer existir na saida.
+    assert list(masked["latitude"].values) == [0.5, 1.0, 1.5]
+    assert list(masked["longitude"].values) == [0.5, 1.0, 1.5]
 
     valid = masked["tp"].isel(valid_time=0).notnull()
-    # pontos estritamente dentro do quadrado [0.4,1.6]x[0.4,1.6]: (0.5,0.5),
-    # (0.5,1.0), (0.5,1.5), (1.0,0.5), (1.0,1.0), (1.0,1.5), (1.5,0.5),
-    # (1.5,1.0), (1.5,1.5) -> 9 pontos
-    assert int(valid.sum()) == 9
-    assert bool(valid.sel(latitude=0.0, longitude=0.0, method="nearest")) is False
+    # dentro da caixa recortada (3x3=9 pontos), so os que realmente caem
+    # dentro do poligono em L continuam validos -- 5 dos 9.
+    assert int(valid.sum()) == 5
+    assert bool(valid.sel(latitude=0.5, longitude=0.5)) is True
+    assert bool(valid.sel(latitude=1.5, longitude=0.5)) is True
+    assert bool(valid.sel(latitude=1.0, longitude=1.0)) is False
+    assert bool(valid.sel(latitude=1.5, longitude=1.5)) is False
