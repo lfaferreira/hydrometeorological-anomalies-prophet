@@ -17,6 +17,22 @@ forma diferente desta frase — em especial usando os termos "previsão",
 "alerta antecipado" ou "risco de inundação" como capacidade do sistema — é
 imprecisa e deve ser corrigida para esta linguagem.
 
+## Roteiro das Etapas do Plano de Correção (1–10)
+
+1. Congelar objetivo e claims (este documento e o objetivo em `README.md`).
+2. Auditar e reconstruir a série (fuso horário, de-acumulação, máscara/percentil espacial da RMR).
+3. Previsões exclusivamente out-of-sample (backtesting rolling-origin com origem expansiva).
+4. Baselines climatológicos e de persistência, avaliados no mesmo protocolo do Prophet.
+5. Redesenhar a avaliação (métricas por evento, clusterização de janelas sobrepostas, cobertura empírica do intervalo).
+6. Expandir e qualificar o catálogo de eventos extremos (schema com tipo de evento, fonte, confiança).
+7. Refazer a comparação com a APAC como análise exploratória de concordância, não benchmark.
+8. Reprodutibilidade e engenharia (seed do Prophet, `pyproject.toml`, lockfile, CI).
+9. INMET e CEMADEN como validação externa (correlação, viés, RMSE) do ERA5-Land — nunca fusão por prioridade de fonte.
+10. Congelar números finais e reescrever a narrativa dos notebooks e do texto do TCC.
+
+Cada etapa concluída deve ter seu próprio plano em `docs/superpowers/plans/`
+e atualizar a tabela de limitações abaixo.
+
 ## O que este trabalho não é
 
 - **Não é um sistema de previsão de chuva.** O Prophet é ajustado apenas com
@@ -35,11 +51,15 @@ imprecisa e deve ser corrigida para esta linguagem.
   acurácia — os critérios são incompatíveis por construção (suporte
   espacial, janela temporal, natureza prospectiva vs. retrospectiva; ver
   `docs/apac_metodologia.md`).
-- **Não funde INMET/CEMADEN como fontes principais.** Essas fontes são
-  usadas apenas como validação externa (correlação, viés, RMSE) da série
-  ERA5-Land — nunca fundidas por prioridade de fonte, o que criaria
-  descontinuidades artificiais que o Prophet leria como anomalia (ver
-  Etapa 9 do plano de correção).
+- **Ainda não usa INMET/CEMADEN, nem os funde por prioridade de fonte.**
+  Nenhuma etapa executada do pipeline hoje consome essas fontes — não há
+  código de correlação, viés ou RMSE contra a série ERA5-Land em `src/` ou
+  `tests/`. Quando isso for implementado (Etapa 9), será apenas como
+  validação externa, nunca fundido por prioridade de fonte (o que criaria
+  descontinuidades artificiais que o Prophet leria como anomalia).
+  `src/data/harmonize.py` já implementa fusão por prioridade de fonte, mas
+  não está conectado a `src/run_pipeline.py` nem a nenhum notebook — deve
+  ser removido ou re-escopado quando a Etapa 9 for planejada.
 - **Não cobre outra região além da RMR.** Nenhuma etapa do plano de correção
   introduz outra região.
 
