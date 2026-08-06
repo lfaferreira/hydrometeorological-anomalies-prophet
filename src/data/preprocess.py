@@ -111,8 +111,11 @@ def deaccumulate_precipitation(
     `4,76e-08 m` (= 4,8e-05 mm) — escala de ULP do float32, jamais um reset
     real. A regra antiga ("`diff < 0` ⇒ reset ⇒ o incremento é o valor bruto
     acumulado") substituía o incremento horário pelo acumulado inteiro do
-    ciclo nesses casos, inflando o total do dia em até +288%; afetava 39% dos
-    dias da série. Simetricamente, 80 resets genuínos das 19.728 ocorrências
+    ciclo nesses casos. Medido na série regenerada: 865 dos 2.192 dias
+    (39,5%) mudaram de valor, com inflação mediana de +10,2% e máxima de
+    +526,6% (2020-09-05: 2,573mm publicados contra 0,411mm reais); o volume
+    total de 6 anos caiu 3,4% (6.727,6mm → 6.497,7mm).
+    Simetricamente, 80 resets genuínos das 19.728 ocorrências
     de `01:00` têm `diff >= 0` (o ciclo anterior terminou com acumulado menor
     que o primeiro incremento do ciclo seguinte) e eram silenciosamente
     perdidos pela regra do sinal.

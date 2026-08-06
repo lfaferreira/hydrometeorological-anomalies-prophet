@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-06T16:58:44.733289+00:00",
+  "generated_at": "2026-08-06T19:03:46.782519+00:00",
   "dataset": "reanalysis-era5-land",
   "variable": "total_precipitation",
   "period": {
-    "start": "2019-12-31",
+    "start": "2020-01-01",
     "end": "2025-12-31"
   },
   "spatial_extent": {
