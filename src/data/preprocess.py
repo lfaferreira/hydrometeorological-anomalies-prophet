@@ -173,30 +173,27 @@ def to_local_time(da: xr.DataArray, tz: str = "America/Recife", time_dim: str = 
     return shifted
 
 
-def compute_daily_areal_precipitation(
+def _daily_pixel_totals(
     ds: xr.Dataset,
     precip_var: str = "tp",
     time_dim: str = "valid_time",
-    scale_factor: float = 1000.0
-) -> pd.Series:
-    """Calcula a precipitação média diária sobre a área de estudo.
+    scale_factor: float = 1000.0,
+) -> xr.DataArray:
+    """Prepara o total diário por pixel: escala, de-acumula e alinha o tempo.
 
-    Passos:
-        1. Converte a variável de precipitação para milímetros (fator de escala).
-        2. De-acumula os passos horários (ver `deaccumulate_precipitation`).
-        3. Corrige o rótulo de janela de acumulação (relabel -1h) e converte para América/Recife.
-        4. Agrega temporalmente para total diário (calendário local) em cada pixel.
-        5. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
+    Passos compartilhados por `compute_daily_areal_precipitation` e
+    `compute_daily_spatial_stats` — mantidos em uma única função para que
+    as duas nunca divirjam na definição de "total diário".
 
     Args:
         ds: Dataset com variável de precipitação e coordenadas espaciais.
         precip_var: Nome da variável de precipitação.
         time_dim: Nome da dimensão temporal.
         scale_factor: Fator para converter os dados originais para mm.
-            (Ex: dados originais em m -> *1000 = mm)
 
     Returns:
-        Série pandas com índice temporal e valores médios diários de precipitação (mm).
+        DataArray com total diário (calendário local `America/Recife`) por
+        pixel, dimensões (`ds`-como-dia, latitude, longitude).
     """
     logger.info("Convertendo '%s' para mm (fator %.1f)", precip_var, scale_factor)
     ds = ds.copy()
@@ -215,16 +212,87 @@ def compute_daily_areal_precipitation(
     ds[precip_var] = local_da
 
     logger.info("Agregando temporalmente para total diário (calendário local) por pixel")
-    daily_pixel = ds.resample({time_dim: "1D"}).sum(skipna=False)
+    return ds.resample({time_dim: "1D"}).sum(skipna=False)[precip_var]
+
+
+def compute_daily_areal_precipitation(
+    ds: xr.Dataset,
+    precip_var: str = "tp",
+    time_dim: str = "valid_time",
+    scale_factor: float = 1000.0
+) -> pd.Series:
+    """Calcula a precipitação média diária sobre a área de estudo.
+
+    Passos:
+        1. Converte a variável de precipitação para milímetros (fator de escala).
+        2. De-acumula os passos horários (ver `deaccumulate_precipitation`).
+        3. Corrige o rótulo de janela de acumulação e converte para
+           `America/Recife` (ver `align_valid_time_to_accumulation_window`,
+           `to_local_time`).
+        4. Agrega temporalmente para total diário (calendário local) em cada pixel.
+        5. Calcula a média espacial sobre as dimensões lat/lon, ignorando NaNs.
+
+    Args:
+        ds: Dataset com variável de precipitação e coordenadas espaciais.
+        precip_var: Nome da variável de precipitação.
+        time_dim: Nome da dimensão temporal.
+        scale_factor: Fator para converter os dados originais para mm.
+            (Ex: dados originais em m -> *1000 = mm)
+
+    Returns:
+        Série pandas com índice temporal (dias locais) e valores médios
+        diários de precipitação (mm).
+    """
+    daily_pixel = _daily_pixel_totals(ds, precip_var, time_dim, scale_factor)
 
     logger.info("Calculando média espacial (média de todos os pixels da região)")
     area_mean = daily_pixel.mean(dim=["latitude", "longitude"], skipna=True)
 
-    # Converte para DataFrame e depois para Series para facilitar limpeza
-    series = area_mean[precip_var].to_pandas()
+    series = area_mean.to_pandas()
     series = series.dropna()
     logger.info("Série temporal gerada com %d pontos (após remoção de NaNs)", len(series))
     return series
+
+
+def compute_daily_spatial_stats(
+    ds: xr.Dataset,
+    precip_var: str = "tp",
+    time_dim: str = "valid_time",
+    scale_factor: float = 1000.0,
+    percentiles: tuple = (0.9, 0.95),
+) -> pd.DataFrame:
+    """Calcula média, máximo e percentis altos da precipitação diária sobre a área.
+
+    A média areal (usada como `y` do Prophet) atenua extremos localizados —
+    esta função complementa com o máximo espacial e percentis altos (p90,
+    p95) do dia, que preservam informação sobre picos de chuva concentrados
+    em parte da RMR mesmo quando a média do dia é modesta.
+
+    Args:
+        ds: Dataset com variável de precipitação e coordenadas espaciais.
+        precip_var: Nome da variável de precipitação.
+        time_dim: Nome da dimensão temporal.
+        scale_factor: Fator para converter os dados originais para mm.
+        percentiles: Percentis altos (0-1) a calcular, além de média e máximo.
+
+    Returns:
+        DataFrame indexado por dia (local), colunas `mean`, `max`, e uma
+        coluna `p{int(q*100)}` por percentil em `percentiles` (ex.: `p90`,
+        `p95` para o padrão).
+    """
+    daily_pixel = _daily_pixel_totals(ds, precip_var, time_dim, scale_factor)
+
+    stats = {
+        "mean": daily_pixel.mean(dim=["latitude", "longitude"], skipna=True).to_pandas(),
+        "max": daily_pixel.max(dim=["latitude", "longitude"], skipna=True).to_pandas(),
+    }
+    for q in percentiles:
+        label = f"p{int(round(q * 100))}"
+        stats[label] = daily_pixel.quantile(q, dim=["latitude", "longitude"], skipna=True).to_pandas()
+
+    df = pd.DataFrame(stats).dropna(how="all")
+    logger.info("Estatísticas espaciais diárias geradas com %d linhas", len(df))
+    return df
 
 
 def prepare_prophet_dataframe(series: pd.Series, time_name: str = "ds", value_name: str = "y") -> pd.DataFrame:

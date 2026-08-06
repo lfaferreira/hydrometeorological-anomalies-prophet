@@ -6,6 +6,7 @@ import xarray as xr
 from src.data.preprocess import (
     deaccumulate_precipitation,
     compute_daily_areal_precipitation,
+    compute_daily_spatial_stats,
     align_valid_time_to_accumulation_window,
     to_local_time,
 )
@@ -74,3 +75,20 @@ def test_compute_daily_areal_precipitation_applies_time_alignment_before_resampl
     # 10mm) + 3 horas adicionais do proximo ciclo (0.2mm cada)
     assert pd.Timestamp("2019-12-31") in series.index
     assert series.loc[pd.Timestamp("2019-12-31")] == pytest.approx(10.6, abs=0.2)
+
+
+def test_compute_daily_spatial_stats_returns_mean_max_and_percentiles(tiny_precip_dataset):
+    stats = compute_daily_spatial_stats(tiny_precip_dataset)
+
+    assert list(stats.columns) == ["mean", "max", "p90", "p95"]
+    # tiny_precip_dataset tem 2 dias UTC, mas o relabel -1h + conversao para
+    # America/Recife (-3h) reparte os dados em 3 dias de calendario local
+    # (2019-12-31, 2020-01-01, 2020-01-02) -- mesmo comportamento ja coberto
+    # por test_compute_daily_areal_precipitation_matches_known_daily_total,
+    # que usa o mesmo fixture e checa os 2 primeiros valores dessa mesma serie
+    # de 3 pontos.
+    assert len(stats) == 3
+    # o maximo espacial nunca pode ser menor que a media espacial no mesmo dia
+    assert (stats["max"] >= stats["mean"]).all()
+    assert (stats["p95"] >= stats["p90"]).all()
+    assert (stats["max"] >= stats["p95"]).all()
